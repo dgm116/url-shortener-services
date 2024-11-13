@@ -49,6 +49,9 @@ public class UrlServiceImpl implements UrlService{
 
         logger.info("Starting process to generate a unique ID for the URL.");
 
+        if(largeUrl == null|| largeUrl.isBlank())
+            throw new IllegalArgumentException("The url parameter must not be null or empty");
+
         String id = "";
         while (id.length() == 0){
             id = generateId().trim();

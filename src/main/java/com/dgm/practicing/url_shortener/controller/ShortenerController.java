@@ -31,8 +31,14 @@ public class ShortenerController {
     @PostMapping("/shorten")
     public ResponseEntity<ShortenUrlResponseDto> getShorterUrl(@RequestParam String url) {
         logger.info("Request received toshorten URL: {}", url);
+        String shorterUrl;
 
-        String shorterUrl = urlService.generateUrl(url);
+        try{
+            shorterUrl = urlService.generateUrl(url);
+        }catch(Exception e){
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        
         ShortenUrlResponseDto responseDto = new ShortenUrlResponseDto(shorterUrl);
 
         logger.info("Successfully generated shortened URL: {}", shorterUrl);

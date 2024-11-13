@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.dgm.practicing.url_shortener.exception.DataProcessingException;
 import com.dgm.practicing.url_shortener.exception.ResourceNotFoundException;
 import com.dgm.practicing.url_shortener.model.UrlModel;
 import com.google.api.core.ApiFuture;
@@ -146,6 +147,63 @@ public class UrlServiceImplTest {
 
         assertNotNull(resultUrl);
         assertTrue(resultUrl.contains(urlService.getBaseUrl()));
+    }
+
+    @DisplayName("Test for empty URL input")
+    @Test
+    void testGenerateUrlEmptyUrl() {
+        String largeUrl = "";
+        urlService = new UrlServiceImpl(db);
+        assertThrows(IllegalArgumentException.class, () -> {
+            urlService.generateUrl(largeUrl);
+        });
+    }
+
+    @DisplayName("Test for null URL input")
+    @Test
+    void testGenerateUrlNullUrl() {
+        String largeUrl = null;
+        urlService = new UrlServiceImpl(db);
+        assertThrows(IllegalArgumentException.class, () -> {
+            urlService.generateUrl(largeUrl);
+        });
+    }
+
+    @DisplayName("Test for database save failure")
+    @Test
+    void testGenerateUrlDatabaseError() throws InterruptedException, ExecutionException {
+        urlService = spy(new UrlServiceImpl(db));
+        urlService.setBaseUrl("https://base.yl/");
+
+        doReturn(null).when(urlService).getUrl(anyString(), anyInt());
+
+        when(db.collection("urls")).thenReturn(mock(CollectionReference.class));
+        when(db.collection("urls").document(anyString())).thenReturn(mockDocumentReference);
+        when(mockDocumentReference.set(any(UrlModel.class))).thenThrow(DataProcessingException.class);
+
+        String largeUrl = "https://prueba.url.larga/getSuccess";
+        assertThrows(DataProcessingException.class, () -> {
+            urlService.generateUrl(largeUrl);
+        });
+    }
+
+    @DisplayName("Test for successful Case")
+    @Test
+    void testGenerateUrlExceptionFutureGet() throws InterruptedException, ExecutionException{
+        urlService = spy(new UrlServiceImpl(db));
+        urlService.setBaseUrl("https://base.yl/");
+
+        doReturn(null).when(urlService).getUrl(anyString(), anyInt());
+
+        when(db.collection("urls")).thenReturn(mock(CollectionReference.class));
+        when(db.collection("urls").document(anyString())).thenReturn(mockDocumentReference);
+        when(mockDocumentReference.set(any(UrlModel.class))).thenReturn(mockApiFutureWriteResult);
+        when(mockApiFutureWriteResult.get()).thenThrow(InterruptedException.class);
+
+        String largeUrl = "https://prueba.url.larga/getSuccess";
+        assertThrows(DataProcessingException.class, () -> {
+            urlService.generateUrl(largeUrl);
+        });
     }
         
 }
